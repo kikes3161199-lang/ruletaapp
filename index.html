@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d0520" />
+  <title> Ruleta Casino - Ultra</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+    html,body{height:100%}
+    body{
+      font-family:'Fredoka One',cursive;
+      background:#0d0520;
+      color:#fff;
+      overflow-x:hidden;
+      touch-action:manipulation;
+    }
+    button{font-family:inherit;touch-action:manipulation}
+
+    /* Fondo casino */
+    .bg{
+      position:fixed;inset:0;z-index:0;
+      background:
+        radial-gradient(ellipse at 20% 40%, rgba(255, 0, 153,.35) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 255, 255,.25) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 90%, rgba(255, 215, 0,.18) 0%, transparent 60%),
+        #0d0520;
+    }
+    .star{
+      position:fixed;width:3px;height:3px;background:#fff;border-radius:50%;
+      opacity:.55;z-index:1;box-shadow:0 0 10px rgba(255,255,255,.8);pointer-events:none;
+      animation:twinkle 3s infinite;
+    }
+    @keyframes twinkle{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:1;transform:scale(1.6)}}
+
+    /* Layout */
+    .wrap{
+      position:relative;z-index:2;
+      min-height:100vh;
+      display:flex;flex-direction:column;
+      align-items:center;
+      padding:14px 12px 20px;
+      gap:10px;
+    }
+
+    .title{
+      text-align:center;
+      margin-top:6px;
+    }
+    .title h1{
+      font-size:1.9rem;
+      color:#FFD700;
+      text-shadow:0 0 18px rgba(255,215,0,.35);
+      letter-spacing:.5px;
+    }
+    .title p{
+      margin-top:6px;
+      font-family:'Nunito',sans-serif;
+      opacity:.9;
+      font-size:.95rem;
+    }
+
+    /* Panel de stats */
+    .stats{
+      width:100%;
+      max-width:720px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .pill{
+      flex:1;
+      min-width:160px;
+      max-width:240px;
+      background:rgba(0,0,0,.28);
+      border:1px solid rgba(255,215,0,.25);
+      border-radius:18px;
+      padding:10px 12px;
+      text-align:center;
+      box-shadow:0 0 20px rgba(255,215,0,.08);
+    }
+    .pill .label{
+      font-family:'Nunito',sans-serif;
+      font-size:.8rem;
+      opacity:.9;
+      letter-spacing:.4px;
+    }
+    .pill .value{
+      margin-top:4px;
+      color:#FFD700;
+      font-size:1.25rem;
+    }
+
+    /* Ruleta */
+    .wheel-area{
+      width:100%;
+      max-width:720px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:6px;
+    }
+
+    .wheel-container{
+      position:relative;
+      width:min(330px, 86vw);
+      aspect-ratio:1;
+    }
+
+    #wheel{
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      background:rgba(0,0,0,.18);
+      box-shadow:
+        0 0 25px rgba(255,215,0,.18),
+        0 0 80px rgba(0,255,255,.08),
+        0 0 80px rgba(255,0,153,.06);
+    }
+
+    /* Puntero (EXTRA casino) */
+    .pointer{
+      position:absolute;
+      top:-18px;
+      left:50%;
+      transform:translateX(-50%);
+      width:0;height:0;
+      border-left:16px solid transparent;
+      border-right:16px solid transparent;
+      border-bottom:26px solid #FFD700;
+      filter:drop-shadow(0 8px 14px rgba(0,0,0,.6));
+      z-index:9999;
+      animation:pulsePointer 1.2s infinite;
+    }
+    .pointer::after{
+      content:"";
+      position:absolute;
+      left:-11px;
+      top:6px;
+      width:0;height:0;
+      border-left:11px solid transparent;
+      border-right:11px solid transparent;
+      border-bottom:16px solid #ff9f00;
+    }
+    @keyframes pulsePointer{
+      0%,100%{transform:translateX(-50%) scale(1)}
+      50%{transform:translateX(-50%) scale(1.07)}
+    }
+
+    /* Botón girar */
+    .actions{
+      width:100%;
+      max-width:720px;
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:6px;
+    }
+    #spinBtn{
+      width:100%;
+      max-width:720px;
+      padding:14px 16px;
+      border:none;
+      border-radius:22px;
+      background:linear-gradient(145deg,#29ABFF,#0077DD);
+      color:#fff;
+      font-size:1.15rem;
+      cursor:pointer;
+      border:2px solid rgba(136,204,255,.7);
+      box-shadow:0 10px 28px rgba(41,171,255,.18);
+    }
+    #spinBtn:disabled{opacity:.55;cursor:not-allowed}
+
+    .miniBtn{
+      padding:10px 12px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(255,255,255,.10);
+      color:#fff;
+      cursor:pointer;
+      font-family:'Nunito',sans-serif;
+      font-weight:900;
+    }
+
+    /* Historial */
+    .history{
+      width:100%;
+      max-width:720px;
+      display:flex;
+      gap:8px;
+      overflow-x:auto;
+      padding:8px 4px;
+    }
+    .hitem{
+      white-space:nowrap;
+      background:rgba(255,215,0,.10);
+      border:1px solid rgba(255,215,0,.18);
+      border-radius:14px;
+      padding:8px 10px;
+      font-family:'Nunito',sans-serif;
+      color:#FFD700;
+      font-weight:900;
+      font-size:.92rem;
+    }
+
+    /* Toast */
+    .toast{
+      position:fixed;
+      bottom:22px;
+      left:50%;
+      transform:translateX(-50%);
+      background:#0a051e;
+      border:1px solid #FFD700;
+      color:#FFD700;
+      padding:10px 16px;
+      border-radius:999px;
+      z-index:99999;
+      opacity:0;
+      transition:.2s;
+      max-width:92vw;
+      text-align:center;
+      font-family:'Nunito',sans-serif;
+      font-weight:900;
+    }
+    .toast.show{opacity:1}
+
+    /* Modal */
+    .modal{
+      position:fixed;inset:0;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,.88);
+      z-index:9999;
+      opacity:0;pointer-events:none;
+      transition:.2s;
+      padding:18px;
+    }
+    .modal.show{opacity:1;pointer-events:auto}
+    .modalBox{
+      width:100%;
+      max-width:420px;
+      background:linear-gradient(145deg,#2d1b5e,#1a0a3e);
+      border:3px solid #FFD700;
+      border-radius:28px;
+      padding:18px;
+      text-align:center;
+    }
+    .modalBox h2{
+      color:#FFD700;
+      margin-top:8px;
+      font-size:1.8rem;
+    }
+    .modalBox .big{
+      font-size:2.3rem;
+      color:#FFD700;
+      margin:10px 0;
+    }
+    .modalBox p{
+      font-family:'Nunito',sans-serif;
+      opacity:.95;
+    }
+    .modalBox button{
+      margin-top:14px;
+      padding:10px 16px;
+      border:none;
+      border-radius:18px;
+      background:#FFD700;
+      color:#1a0a2e;
+      font-weight:900;
+      cursor:pointer;
+      font-family:'Nunito',sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="bg"></div>
+
+  <div class="wrap">
+    <div class="title">
+      <h1> RULETA CASINO ULTRA</h1>
+      <p>Premios visibles por color • Puntero premium • Guardado automático</p>
+    </div>
+
+    <div class="stats">
+      <div class="pill">
+        <div class="label">SALDO</div>
+        <div class="value" id="saldoTxt">10,000</div>
+      </div>
+      <div class="pill">
+        <div class="label">COSTO POR GIRO</div>
+        <div class="value" id="costTxt">10</div>
+      </div>
+      <div class="pill">
+        <div class="label">BOTE ACUMULADO</div>
+        <div class="value" id="boteTxt">0</div>
+      </div>
+    </div>
+
+    <div class="wheel-area">
+      <div class="wheel-container">
+        <div class="pointer"></div>
+        <canvas id="wheel" width="320" height="320"></canvas>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="spinBtn" onclick="spin()"> GIRAR</button>
+      <button class="miniBtn" onclick="toggleSound()"> Sonido: <span id="soundState">OFF</span></button>
+      <button class="miniBtn" onclick="resetAll()"> Reiniciar</button>
+    </div>
+
+    <div class="history" id="history"></div>
+  </div>
+
+  <div class="toast" id="toast">Mensaje</div>
+
+  <div class="modal" id="winModal">
+    <div class="modalBox">
+      <div style="font-size:3.2rem" id="winEmoji"></div>
+      <h2>¡GANASTE!</h2>
+      <p id="winLabel">Premio</p>
+      <div class="big" id="winAmount">+0 </div>
+      <button onclick="closeWin()">CONTINUAR</button>
+    </div>
+  </div>
+
+<script>
+  // ===== PWA Service Worker =====
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js");
+    });
+  }
+
+  // ===== Stars =====
+  (function createStars(){
+    for(let i=0;i<28;i++){
+      const s=document.createElement("div");
+      s.className="star";
+      s.style.left=(Math.random()*100)+"%";
+      s.style.top=(Math.random()*100)+"%";
+      s.style.animationDuration=(Math.random()*3+2)+"s";
+      document.body.appendChild(s);
+    }
+  })();
+
+  // ===== Android vibe =====
+  function vibrate(v=20){ try{ if(navigator.vibrate) navigator.vibrate(v);}catch(e){} }
+
+  // ===== Simple sound (optional) =====
+  let soundOn=false;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  let audioCtx=null;
+  function beep(freq=520, ms=35, type="square", vol=0.03){
+    if(!soundOn) return;
+    try{
+      if(!audioCtx) audioCtx = new AudioCtx();
+      const o=audioCtx.createOscillator();
+      const g=audioCtx.createGain();
+      o.type=type; o.frequency.value=freq;
+      g.gain.value=vol;
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start();
+      setTimeout(()=>o.stop(), ms);
+    }catch(e){}
+  }
+  function toggleSound(){
+    soundOn=!soundOn;
+    document.getElementById("soundState").textContent = soundOn ? "ON" : "OFF";
+    beep(740,70,"triangle",0.05);
+    save();
+  }
+
+  // ===== State / Save =====
+  const SAVE_KEY="ruleta_ultra_casino_v1";
+  let saldo=10000;
+  let bote=0;
+  const cost=10;
+
+  let angle=0;
+  let spinning=false;
+
+  // Segmentos (premios por color)
+  const segments = [
+    {color:"#ff3b3b", prize:10,   label:"10 ",  emoji:""},
+    {color:"#00b7ff", prize:20,   label:"20 ",  emoji:""},
+    {color:"#00c851", prize:50,   label:"50 ",  emoji:""},
+    {color:"#ffd700", prize:100,  label:"100 ", emoji:""},
+    {color:"#ff8c00", prize:200,  label:"200 ", emoji:""},
+    {color:"#aa00ff", prize:500,  label:"500 ", emoji:""},
+    {color:"#00ffff", prize:1000, label:"1000 ",emoji:""},
+    {color:"#ff0066", prize:2000, label:"2000 ",emoji:""}
+  ];
+
+  function save(){
+    try{
+      localStorage.setItem(SAVE_KEY, JSON.stringify({saldo,bote,angle,soundOn}));
+    }catch(e){}
+  }
+  function load(){
+    try{
+      const raw=localStorage.getItem(SAVE_KEY);
+      if(!raw) return false;
+      const d=JSON.parse(raw);
+      saldo=Number(d.saldo ?? 10000);
+      bote=Number(d.bote ?? 0);
+      angle=Number(d.angle ?? 0);
+      soundOn=!!d.soundOn;
+      document.getElementById("soundState").textContent = soundOn ? "ON" : "OFF";
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ===== UI =====
+  function fmt(n){ return Number(n).toLocaleString(); }
+  function toast(msg){
+    const t=document.getElementById("toast");
+    t.textContent=msg;
+    t.classList.add("show");
+    setTimeout(()=>t.classList.remove("show"), 1800);
+  }
+  function updateUI(){
+    document.getElementById("saldoTxt").textContent = fmt(saldo);
+    document.getElementById("boteTxt").textContent  = fmt(bote);
+    document.getElementById("costTxt").textContent  = fmt(cost);
+  }
+  function addHistory(text){
+    const h=document.getElementById("history");
+    const div=document.createElement("div");
+    div.className="hitem";
+    div.textContent=text;
+    h.insertBefore(div, h.firstChild);
+    if(h.children.length>10) h.removeChild(h.lastChild);
+  }
+
+  // ===== Modal =====
+  function showWin(seg){
+    document.getElementById("winEmoji").textContent = seg.emoji || "";
+    document.getElementById("winLabel").textContent = "Premio: " + seg.label;
+    document.getElementById("winAmount").textContent = "+" + fmt(seg.prize) + " ";
+    document.getElementById("winModal").classList.add("show");
+  }
+  function closeWin(){
+    document.getElementById("winModal").classList.remove("show");
+  }
+
+  // ===== Draw Wheel (casino 3D + luces + valores) =====
+  function drawWheel(){
+    const canvas=document.getElementById("wheel");
+    const ctx=canvas.getContext("2d");
+
+    // nitidez
+    const dpr = window.devicePixelRatio || 1;
+    const css = canvas.clientWidth || 320;
+    const size = Math.round(css * dpr);
+    if(canvas.width !== size || canvas.height !== size){
+      canvas.width=size; canvas.height=size;
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const w = canvas.width / dpr;
+    const h = canvas.height / dpr;
+    const cx=w/2, cy=h/2;
+    const R = Math.min(w,h)/2 - 10;
+
+    ctx.clearRect(0,0,w,h);
+
+    const segCount = segments.length;
+    const step = (Math.PI*2)/segCount;
+
+    // ring dorado
+    const ring = ctx.createLinearGradient(cx-R,cy-R,cx+R,cy+R);
+    ring.addColorStop(0,"#fff2a8");
+    ring.addColorStop(.45,"#ffd700");
+    ring.addColorStop(1,"#b8860b");
+    ctx.beginPath();
+    ctx.arc(cx,cy,R+2,0,Math.PI*2);
+    ctx.lineWidth=9;
+    ctx.strokeStyle=ring;
+    ctx.stroke();
+
+    // segmentos
+    for(let i=0;i<segCount;i++){
+      const start = angle + i*step;
+      const end = start + step;
+
+      const g = ctx.createRadialGradient(cx,cy,R*0.10,cx,cy,R);
+      g.addColorStop(0,"rgba(255,255,255,.35)");
+      g.addColorStop(.35, segments[i].color);
+      g.addColorStop(1, "rgba(0,0,0,.22)");
+
+      ctx.beginPath();
+      ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,R,start,end);
+      ctx.closePath();
+      ctx.fillStyle=g;
+      ctx.fill();
+
+      ctx.lineWidth=2.5;
+      ctx.strokeStyle="rgba(255,215,0,.85)";
+      ctx.stroke();
+
+      // texto premio dentro
+      const mid = start + step/2;
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.rotate(mid);
+
+      ctx.shadowColor="rgba(0,0,0,.55)";
+      ctx.shadowBlur=6;
+      ctx.fillStyle="#fff";
+      ctx.font="900 18px Nunito";
+      ctx.textAlign="right";
+      ctx.textBaseline="middle";
+      ctx.fillText(segments[i].label, R*0.80, 0);
+
+      ctx.shadowBlur=0;
+      ctx.fillStyle="rgba(255,255,255,.28)";
+      ctx.font="900 12px Nunito";
+      ctx.fillText("PREMIO", R*0.60, 22);
+
+      ctx.restore();
+    }
+
+    // luces alrededor (marquee)
+    const lights = 28;
+    for(let i=0;i<lights;i++){
+      const a = (i*(Math.PI*2)/lights) + angle*0.15;
+      const x = cx + Math.cos(a)*(R+12);
+      const y = cy + Math.sin(a)*(R+12);
+      const on = (i%2===0);
+
+      ctx.beginPath();
+      ctx.arc(x,y,3.4,0,Math.PI*2);
+      ctx.fillStyle = on ? "rgba(255,215,0,.95)" : "rgba(255,255,255,.45)";
+      ctx.fill();
+    }
+
+    // centro 3D
+    const hub = ctx.createRadialGradient(cx-4,cy-6,4,cx,cy,30);
+    hub.addColorStop(0,"#ffffff");
+    hub.addColorStop(.25,"#ffd700");
+    hub.addColorStop(1,"#8a5b00");
+    ctx.beginPath();
+    ctx.arc(cx,cy,30,0,Math.PI*2);
+    ctx.fillStyle=hub;
+    ctx.fill();
+
+    const btn = ctx.createRadialGradient(cx-5,cy-6,3,cx,cy,18);
+    btn.addColorStop(0,"#ffb3b3");
+    btn.addColorStop(.35,"#ff3b3b");
+    btn.addColorStop(1,"#8a0000");
+    ctx.beginPath();
+    ctx.arc(cx,cy,18,0,Math.PI*2);
+    ctx.fillStyle=btn;
+    ctx.fill();
+
+    ctx.fillStyle="rgba(0,0,0,.45)";
+    ctx.font="900 12px Nunito";
+    ctx.textAlign="center";
+    ctx.fillText("CASINO", cx+1, cy+26);
+    ctx.fillStyle="#fff";
+    ctx.fillText("CASINO", cx, cy+25);
+  }
+
+  // ===== Spin =====
+  function spin(){
+    if(spinning) return;
+
+    if(saldo < cost){
+      toast(" Saldo insuficiente");
+      vibrate(30);
+      return;
+    }
+
+    saldo -= cost;
+    updateUI();
+    save();
+
+    spinning=true;
+    document.getElementById("spinBtn").disabled=true;
+    document.getElementById("spinBtn").textContent=" GIRANDO...";
+
+    vibrate(18);
+
+    const spins = 10 + Math.floor(Math.random()*10);
+    const finalAngle = angle + spins*2*Math.PI + Math.random()*2*Math.PI;
+    const startAngle = angle;
+
+    const startTime = performance.now();
+    const duration = 2200;
+
+    // tick casino
+    let lastIdx=-1;
+
+    function anim(now){
+      const t = Math.min((now-startTime)/duration, 1);
+      const ease = 1 - Math.pow(1-t,3);
+      angle = startAngle + (finalAngle-startAngle)*ease;
+
+      drawWheel();
+
+      const idx = getIndex();
+      if(idx !== lastIdx){
+        lastIdx=idx;
+        vibrate(6);
+        beep(520, 24, "square", 0.03);
+      }
+
+      if(t<1) requestAnimationFrame(anim);
+      else{
+        spinning=false;
+        document.getElementById("spinBtn").disabled=false;
+        document.getElementById("spinBtn").textContent=" GIRAR";
+        finishSpin();
+      }
+    }
+
+    requestAnimationFrame(anim);
+  }
+
+  function getIndex(){
+    const segCount = segments.length;
+    const step = (Math.PI*2)/segCount;
+    const pointer = 3*Math.PI/2; // arriba
+    const diff = (pointer - angle + 2*Math.PI)%(2*Math.PI);
+    return Math.floor(diff/step);
+  }
+
+  function finishSpin(){
+    const idx = getIndex();
+    const seg = segments[idx];
+
+    saldo += seg.prize;
+    bote += seg.prize;
+
+    updateUI();
+    save();
+
+    toast(` +${fmt(seg.prize)} `);
+    addHistory(`${seg.emoji} +${fmt(seg.prize)} `);
+
+    // vibración ganadora
+    vibrate([60,30,60]);
+
+    // modal premio
+    showWin(seg);
+  }
+
+  // ===== Reset =====
+  function resetAll(){
+    if(!confirm("¿Reiniciar saldo/bote y progreso?")) return;
+    saldo=10000;
+    bote=0;
+    angle=0;
+    save();
+    updateUI();
+    drawWheel();
+    document.getElementById("history").innerHTML="";
+    toast(" Reiniciado");
+  }
+
+  // ===== Init =====
+  const loaded = load();
+  updateUI();
+  drawWheel();
+  toast(loaded ? " Progreso cargado" : " Nuevo juego");
+
+  // Guardado al salir
+  document.addEventListener("visibilitychange", ()=>{ if(document.hidden) save(); });
+</script>
+</body>
+</html>
